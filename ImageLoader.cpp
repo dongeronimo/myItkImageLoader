@@ -6,6 +6,8 @@
 #include <itkOrientImageFilter.h>
 using namespace imageLoader;
 
+
+
 template<typename TImage> void ItkImageDeepCopy(typename TImage::Pointer input, typename TImage::Pointer output)
 {
 	int inSzX = input->GetLargestPossibleRegion().GetSize()[0];
@@ -108,6 +110,7 @@ map<string, string> LoadedImage::GetMetadata()
 shared_ptr<LoadedImage> ImageLoader::Load(StringList fatias, string idExame, string idSerie)
 {
 	assert("TEM FATIAS???"&&fatias.size() > 0);
+	
 	map<string, string> metadata;
 	typedef itk::MetaDataDictionary DictionaryType;
 	typedef itk::MetaDataObject< std::string > MetaDataStringType;
@@ -152,6 +155,7 @@ shared_ptr<LoadedImage> ImageLoader::Load(StringList fatias, string idExame, str
 
 	//Lê a série
 	reader->SetFileNames(fatias);
+	//reader->AddObserver(itk::ProgressEvent(), progress);
 	try
 	{
 		reader->Update();

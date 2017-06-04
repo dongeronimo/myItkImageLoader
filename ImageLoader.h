@@ -4,7 +4,9 @@
 #include <vector>
 #include "ILoaded.h"
 #include <itkImage.h>
+#include <itkCommand.h>
 #include <map>
+
 using namespace std;
 typedef vector<string> StringList;
 typedef itk::Image<short, 3> ShortImage;
@@ -16,13 +18,13 @@ namespace  imageLoader
 	 * 2)passa uma das listas de fatias para o ImageLoader.
 	 * 3)pega a imagem gerada no imageloader
 	 */
-
+	////Aquele que gera a lista de nomes necessária para o loader funcionar.
 	class NameListGenerator
 	{
 	public:
 		vector<StringList> CreateList(string dirPath, StringList& outSeriesIdentifiers);
 	};
-
+	////A imagem com seu nome, seus voxels e sua metadata dicom.
 	class LoadedImage : public ILoaded
 	{
 	private:
@@ -38,7 +40,7 @@ namespace  imageLoader
 		map<string, string> GetMetadata();
 		virtual ~LoadedImage(){}
 	};
-
+	////Responsável por carregar a imagem, recebe uma lista de fatias e retorna uma imagem.
 	class ImageLoader
 	{
 	public:

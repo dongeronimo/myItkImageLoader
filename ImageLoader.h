@@ -6,12 +6,17 @@
 #include <itkImage.h>
 #include <itkCommand.h>
 #include <map>
+#include <vtkImageImport.h>
+#include <vtkSmartPointer.h>
+#include <vtkXMLImageDataWriter.h>
 
 using namespace std;
 typedef vector<string> StringList;
 typedef itk::Image<short, 3> ShortImage;
 namespace  imageLoader
 {
+
+
 	/*
 	 * O uso é:
 	 * 1)pega as listas de listas de fatias com NameListGenerator
@@ -46,5 +51,33 @@ namespace  imageLoader
 	public:
 		shared_ptr<LoadedImage> Load(StringList fatias, string idExame, string idSerie);
 	};
+
+	static inline void SaveAsXML(ShortImage::Pointer src, std::string file)
+	{
+		vtkSmartPointer<vtkImageImport> finalImage = vtkSmartPointer<vtkImageImport>::New();
+
+		int szX = src->GetLargestPossibleRegion().GetSize()[0];
+		int szY = src->GetLargestPossibleRegion().GetSize()[1];
+		int szZ = src->GetLargestPossibleRegion().GetSize()[2];
+		double sX = src->GetSpacing()[0];
+		double sY = src->GetSpacing()[1];
+		double sZ = src->GetSpacing()[2];
+		double oX = src->GetOrigin()[0];
+		double oY = src->GetOrigin()[1];
+		double oZ = src->GetOrigin()[2];
+		finalImage->SetDataSpacing(sX, sY, sZ);
+		finalImage->SetDataOrigin(oX, oY, oZ);
+		finalImage->SetWholeExtent(0, szX - 1, 0, szY - 1, 0, szZ - 1);
+		finalImage->SetDataExtentToWholeExtent();
+		finalImage->SetDataScalarTypeToShort();
+		void* srcPtr = src->GetBufferPointer();
+		finalImage->SetImportVoidPointer(srcPtr, 1);
+		finalImage->Modified();
+		finalImage->Update();
+		vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
+		writer->SetInputConnection(finalImage->GetOutputPort());
+		writer->SetFileName(file.c_str());
+		writer->Update();
+	}
 }
 

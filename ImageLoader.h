@@ -13,10 +13,9 @@
 using namespace std;
 typedef vector<string> StringList;
 typedef itk::Image<short, 3> ShortImage;
+
 namespace  imageLoader
 {
-
-
 	/*
 	 * O uso é:
 	 * 1)pega as listas de listas de fatias com NameListGenerator
@@ -50,6 +49,7 @@ namespace  imageLoader
 	{
 	public:
 		shared_ptr<LoadedImage> Load(StringList fatias, string idExame, string idSerie);
+		shared_ptr<LoadedImage> LoadVTI(string vtiPath, string idExame, string idSerie);
 	};
 
 	static inline void SaveAsXML(ShortImage::Pointer src, std::string file)

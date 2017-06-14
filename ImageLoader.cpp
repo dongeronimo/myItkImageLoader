@@ -4,6 +4,8 @@
 #include <itkGDCMImageIO.h>
 #include <itkGDCMSeriesFileNames.h>
 #include <itkOrientImageFilter.h>
+#include <vtkXMLImageDataReader.h>
+#include <vtkImageData.h>
 using namespace imageLoader;
 
 
@@ -198,4 +200,32 @@ shared_ptr<LoadedImage> ImageLoader::Load(StringList fatias, string idExame, str
 	ItkImageDeepCopy<ShortImage>(reorientador->GetOutput(), ptrImg);
 	
 	return make_shared<LoadedImage>(ptrImg, metadata,  idExame, idSerie);
+}
+
+shared_ptr<LoadedImage> ImageLoader::LoadVTI(string vtiPath, string idExame, string idSerie)
+{
+	vtkSmartPointer<vtkXMLImageDataReader> reader = vtkSmartPointer<vtkXMLImageDataReader>::New();
+	reader->SetFileName(vtiPath.c_str());
+	reader->Update();
+	vtkImageData *image_data = reader->GetOutput();
+	ShortImage::Pointer img = ShortImage::New();
+	
+	img->SetSpacing(image_data->GetSpacing());
+	ShortImage::RegionType region;
+	ShortImage::SizeType size;
+	size[0] = image_data->GetExtent()[1] + 1;
+	size[1] = image_data->GetExtent()[3] + 1;
+	size[2] = image_data->GetExtent()[5] + 1;
+	region.SetSize(size);
+	ShortImage::IndexType index;
+	index.Fill(0);
+	region.SetIndex(index);
+	img->SetRegions(region);
+	img->SetOrigin(image_data->GetOrigin());
+	img->Allocate();
+	size_t tamanhoDoBuffer = image_data->GetDimensions()[0] * image_data->GetDimensions()[1] * image_data->GetDimensions()[2] * sizeof(short);
+	memcpy(img->GetBufferPointer(), image_data->GetScalarPointer(), tamanhoDoBuffer);
+	map<string, string> metadata_vazia;
+	shared_ptr<LoadedImage> resultado = make_shared<LoadedImage>(img, metadata_vazia, idExame, idSerie);
+	return resultado;
 }

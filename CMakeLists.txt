@@ -7,7 +7,7 @@ find_package(ITK REQUIRED)
 include(${ITK_USE_FILE})
 #cria a lib
 file(GLOB my_source_files "*.h" "*.cpp" "*.cxx")
-add_library(myItkImageLoader ${my_source_files} )  
+add_library(myItkImageLoader SHARED ${my_source_files} )  
 #bota ITK
 target_link_libraries(myItkImageLoader ${ITK_LIBRARIES})
 #expõe

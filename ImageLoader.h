@@ -9,6 +9,7 @@
 #include <vtkImageImport.h>
 #include <vtkSmartPointer.h>
 #include <vtkXMLImageDataWriter.h>
+#include <vtkCallbackCommand.h>
 
 using namespace std;
 typedef vector<string> StringList;
@@ -16,6 +17,64 @@ typedef itk::Image<short, 3> ShortImage;
 
 namespace  imageLoader
 {
+	class MyITKProgressEventSender : public itk::Command
+	{
+	private:
+		HWND targetWindow;
+		static HWND staticTargetWindow;
+	public:
+		static MyITKProgressEventSender *New()
+		{
+			return new MyITKProgressEventSender();
+		}
+
+		void SetHWND(HWND alvo)
+		{
+			targetWindow = alvo;
+			staticTargetWindow = alvo;
+		}
+
+		void Execute(itk::Object * caller, const itk::EventObject & event) override
+		{
+			Execute((const itk::Object *)caller, event);
+		}
+
+		void Execute(const itk::Object * caller, const itk::EventObject & event) override
+		{
+			if (!itk::ProgressEvent().CheckEvent(&event))
+			{
+				return;
+			}
+			const itk::ProcessObject * processObject = dynamic_cast< const itk::ProcessObject * >(caller);
+			if (!processObject)
+			{
+				return;
+			}
+			HWND hwnd = targetWindow;
+			unsigned int msg = WM_USER + 1000;
+			WPARAM wParam = processObject->GetProgress() * 100;
+			LPARAM lParam = 0;
+			SendMessage(hwnd, msg, wParam, lParam);
+		}
+
+		static void vtkProgressCallback(vtkObject* obj, unsigned long eventId, void* clientData, void* calldata)
+		{
+			HWND hwnd = staticTargetWindow;
+			unsigned int msg = WM_USER + 1000;
+			WPARAM wParam = vtkAlgorithm::SafeDownCast(obj)->GetProgress() * 100;
+			LPARAM lParam = 0;
+			SendMessage(hwnd, msg, wParam, lParam);
+		}
+
+		vtkSmartPointer<vtkCallbackCommand> CreateVTKProgressObserver()
+		{
+			vtkSmartPointer<vtkCallbackCommand> cbk = vtkSmartPointer<vtkCallbackCommand>::New();
+			cbk->SetCallback(vtkProgressCallback);
+			return cbk;
+		}
+	};
+
+
 	/*
 	 * O uso é:
 	 * 1)pega as listas de listas de fatias com NameListGenerator
@@ -47,7 +106,10 @@ namespace  imageLoader
 	////Responsável por carregar a imagem, recebe uma lista de fatias e retorna uma imagem.
 	class ImageLoader
 	{
+	private:
+		MyITKProgressEventSender::Pointer eventSender;
 	public:
+		ImageLoader(HWND progressEventTarget=nullptr);
 		shared_ptr<LoadedImage> Load(StringList fatias, string idExame, string idSerie);
 		shared_ptr<LoadedImage> LoadVTI(string vtiPath, string idExame, string idSerie);
 	};

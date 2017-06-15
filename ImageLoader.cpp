@@ -6,8 +6,10 @@
 #include <itkOrientImageFilter.h>
 #include <vtkXMLImageDataReader.h>
 #include <vtkImageData.h>
+#include <vtkCommand.h>
 using namespace imageLoader;
 
+HWND imageLoader::MyITKProgressEventSender::staticTargetWindow = 0;
 
 
 template<typename TImage> void ItkImageDeepCopy(typename TImage::Pointer input, typename TImage::Pointer output)
@@ -109,6 +111,19 @@ map<string, string> LoadedImage::GetMetadata()
 	return this->metadata;
 }
 
+ImageLoader::ImageLoader(HWND progressEventTarget)
+{
+	if(progressEventTarget)
+	{
+		eventSender = MyITKProgressEventSender::New();
+		((MyITKProgressEventSender*)(eventSender.GetPointer()))->SetHWND(progressEventTarget);
+	}
+	else
+	{
+		eventSender = nullptr;
+	}
+}
+
 shared_ptr<LoadedImage> ImageLoader::Load(StringList fatias, string idExame, string idSerie)
 {
 	assert("TEM FATIAS???"&&fatias.size() > 0);
@@ -160,6 +175,8 @@ shared_ptr<LoadedImage> ImageLoader::Load(StringList fatias, string idExame, str
 	//reader->AddObserver(itk::ProgressEvent(), progress);
 	try
 	{
+		if(eventSender)
+			reader->AddObserver(itk::ProgressEvent(), eventSender);
 		reader->Update();
 	}
 	catch (itk::ExceptionObject& ex)
@@ -205,6 +222,11 @@ shared_ptr<LoadedImage> ImageLoader::Load(StringList fatias, string idExame, str
 shared_ptr<LoadedImage> ImageLoader::LoadVTI(string vtiPath, string idExame, string idSerie)
 {
 	vtkSmartPointer<vtkXMLImageDataReader> reader = vtkSmartPointer<vtkXMLImageDataReader>::New();
+	if(eventSender)
+	{
+		reader->AddObserver(vtkCommand::ProgressEvent, ((MyITKProgressEventSender*)(eventSender.GetPointer()))->CreateVTKProgressObserver());
+	}
+	
 	reader->SetFileName(vtiPath.c_str());
 	reader->Update();
 	vtkImageData *image_data = reader->GetOutput();

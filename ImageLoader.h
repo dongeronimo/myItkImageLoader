@@ -114,6 +114,34 @@ namespace  imageLoader
 		shared_ptr<LoadedImage> LoadVTI(string vtiPath, string idExame, string idSerie);
 	};
 
+	static inline void SaveAsXML(itk::Image<float,3>::Pointer src, std::string file)
+	{
+		vtkSmartPointer<vtkImageImport> finalImage = vtkSmartPointer<vtkImageImport>::New();
+
+		int szX = src->GetLargestPossibleRegion().GetSize()[0];
+		int szY = src->GetLargestPossibleRegion().GetSize()[1];
+		int szZ = src->GetLargestPossibleRegion().GetSize()[2];
+		double sX = src->GetSpacing()[0];
+		double sY = src->GetSpacing()[1];
+		double sZ = src->GetSpacing()[2];
+		double oX = src->GetOrigin()[0];
+		double oY = src->GetOrigin()[1];
+		double oZ = src->GetOrigin()[2];
+		finalImage->SetDataSpacing(sX, sY, sZ);
+		finalImage->SetDataOrigin(oX, oY, oZ);
+		finalImage->SetWholeExtent(0, szX - 1, 0, szY - 1, 0, szZ - 1);
+		finalImage->SetDataExtentToWholeExtent();
+		finalImage->SetDataScalarTypeToFloat();
+		float* srcPtr = src->GetBufferPointer();
+		finalImage->SetImportVoidPointer(srcPtr, 1);
+		finalImage->Modified();
+		finalImage->Update();
+		vtkSmartPointer<vtkXMLImageDataWriter> writer = vtkSmartPointer<vtkXMLImageDataWriter>::New();
+		writer->SetInputConnection(finalImage->GetOutputPort());
+		writer->SetFileName(file.c_str());
+		writer->Update();
+	}
+
 	static inline void SaveAsXML(ShortImage::Pointer src, std::string file)
 	{
 		vtkSmartPointer<vtkImageImport> finalImage = vtkSmartPointer<vtkImageImport>::New();
